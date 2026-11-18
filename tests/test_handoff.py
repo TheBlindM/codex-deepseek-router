@@ -15,6 +15,9 @@ FLASH = "deepseek_flash"
 PRO = "deepseek_pro"
 
 SCRIPT = str(Path(__file__).resolve().parents[1] / "hooks" / "plaintext_handoff.py")
+POWERSHELL_SCRIPT = str(
+    Path(__file__).resolve().parents[1] / "hooks" / "plaintext-handoff.ps1"
+)
 
 
 def iso(dt):
@@ -537,6 +540,69 @@ def test_cli_invalid_ttl(handoff_dir):
         "--state-directory", str(handoff_dir), stdin_text="x",
     )
     assert proc.returncode == 8
+
+
+@pytest.mark.skipif(sys.platform != "win32", reason="PowerShell handoff is Windows-only")
+def test_windows_powershell_stage_hook_roundtrip(handoff_dir):
+    stage = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            POWERSHELL_SCRIPT,
+            "-Mode",
+            "stage",
+            "-AgentType",
+            FLASH,
+            "-Policy",
+            "FAST",
+            "-Modality",
+            "TEXT_ONLY",
+            "-StateDirectory",
+            str(handoff_dir),
+        ],
+        input="PowerShell staging probe.",
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert stage.returncode == 0, stage.stderr
+    staged = json.loads(stage.stdout)
+    assert staged["agent_type"] == FLASH
+    assert handoff.pending_path(handoff_dir, FLASH).is_file()
+
+    hook_input = json.dumps(
+        {"hook_event_name": "SubagentStart", "agent_type": FLASH, "agent_id": "child-ps"}
+    )
+    hook = subprocess.run(
+        [
+            "powershell.exe",
+            "-NoProfile",
+            "-NonInteractive",
+            "-ExecutionPolicy",
+            "Bypass",
+            "-File",
+            POWERSHELL_SCRIPT,
+            "-Mode",
+            "hook",
+            "-StateDirectory",
+            str(handoff_dir),
+        ],
+        input=hook_input,
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+    assert hook.returncode == 0, hook.stderr
+    payload = json.loads(hook.stdout)
+    context = payload["hookSpecificOutput"]["additionalContext"]
+    assert "BEGIN PARENT ASSIGNMENT" in context
+    assert "PowerShell staging probe." in context
+    assert not handoff.pending_path(handoff_dir, FLASH).exists()
+    assert not handoff.claimed_files(handoff_dir, FLASH)
 
 
 # ---------------------------------------------------------------------------

@@ -556,6 +556,8 @@ try {
             $Modality = [string](Get-JsonProperty $envelope "modality")
             $visualContext = Get-JsonProperty $envelope "visual_context"
             $evidencePacket = Get-JsonProperty $envelope "evidence_packet"
+        } else {
+            $Agent = $AgentType
         }
         if ([string]::IsNullOrWhiteSpace($Agent)) {
             Stop-Handoff "Missing agent type for staging." 8

@@ -2710,9 +2710,11 @@ def wait_for_child_metadata(
         time.sleep(min(poll_interval, remaining))
 
 
-def _smoke_env(paths: Paths) -> Dict[str, str]:
+def _smoke_env(
+    paths: Paths, codex_home: Optional[Path] = None
+) -> Dict[str, str]:
     env = dict(os.environ)
-    env["CODEX_HOME"] = str(paths.codex_home)
+    env["CODEX_HOME"] = str(codex_home or paths.codex_home)
     # Windows/Linux agents use env_key. macOS agents use the Python Keychain
     # helper in their TOML and must not decrypt the key redundantly here.
     if platform_name() == "macos" and credential_backend() == "macos-keychain":
@@ -2865,21 +2867,27 @@ def direct_codex_delegate(
         *_direct_codex_config_args(config, spec, model),
         "-",
     ]
-    try:
-        proc = subprocess.run(
-            command,
-            capture_output=True,
-            text=True,
-            input=prompt,
-            env=_smoke_env(paths),
-            timeout=resolved_timeout_seconds,
-        )
-    except subprocess.TimeoutExpired as exc:
-        raise ManagerError(
-            "delegate_timeout",
-            f"Direct Codex delegation for {role} timed out after {resolved_timeout_seconds} seconds.",
-            {"timeout_seconds": resolved_timeout_seconds},
-        ) from exc
+    # Keep direct executions independent from the parent Codex state database.
+    # Codex Desktop may run tools under a read-only sandbox identity, while the
+    # delegated top-level execution still needs a writable CODEX_HOME.
+    with tempfile.TemporaryDirectory(
+        prefix=f"codex-deepseek-router-{role}-"
+    ) as runtime_home:
+        try:
+            proc = subprocess.run(
+                command,
+                capture_output=True,
+                text=True,
+                input=prompt,
+                env=_smoke_env(paths, Path(runtime_home)),
+                timeout=resolved_timeout_seconds,
+            )
+        except subprocess.TimeoutExpired as exc:
+            raise ManagerError(
+                "delegate_timeout",
+                f"Direct Codex delegation for {role} timed out after {resolved_timeout_seconds} seconds.",
+                {"timeout_seconds": resolved_timeout_seconds},
+            ) from exc
     if proc.returncode != 0:
         raise ManagerError(
             "delegate_failed",

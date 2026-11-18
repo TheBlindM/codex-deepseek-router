@@ -9,6 +9,53 @@ Use DeepSeek only when delegation materially improves cost, context isolation,
 parallel exploration, or reasoning quality. The Codex parent stays the main
 agent: it decides, verifies, and integrates.
 
+## Flash-first routing balance
+
+Treat `deepseek_flash` as the default delegated role. Try Flash first whenever
+the assignment can be completed through bounded text-only inspection and a
+read-only result is sufficient. This includes broad repository exploration,
+multi-file code and dependency mapping, large log analysis, extraction,
+documentation reading, bounded root-cause investigation, pre-implementation
+analysis, and precise diff or test-plan proposals. Flash is capable of
+substantial investigation and must not be bypassed merely because the task is
+long, spans several files, or is moderately complex.
+
+Use `deepseek_pro` directly only when at least one hard trigger applies:
+
+- the requested result requires workspace edits;
+- Flash returned `ESCALATE_TO_PRO` or demonstrably failed the acceptance
+  criteria;
+- the decision involves concurrency, distributed invariants, security
+  boundaries, conflicting evidence, or high regression risk;
+- the task needs a system-wide architectural decision that cannot be bounded
+  using the evidence available to Flash.
+
+Do not choose Pro solely because the repository is large, the context is long,
+the investigation touches multiple files, or the answer may eventually lead
+to a code change. First reshape those tasks into a bounded Flash FAST or
+SPEC-Lite investigation unless a hard trigger above applies. When Flash
+returns useful evidence, pass that packet to Pro instead of asking Pro to
+rediscover the repository. The parent keeps final verification and can still
+land a read-only Flash proposal itself.
+
+### Escalated Pro ownership
+
+When a task is escalated to `deepseek_pro` because it requires workspace
+edits or meets a high-risk trigger, make Pro the technical owner of the
+delivery. Do not ask Pro merely to suggest changes while a Flash parent
+implements or independently re-analyzes them in parallel. The Pro assignment
+must include `ACCEPTANCE CRITERIA`, a concrete verification target, and
+`VERIFICATION OWNER` set to `CHILD` or `SHARED`. Complex Pro + REACT
+assignments must also include `QUALITY CLOSURE`.
+
+After Pro returns, the Flash parent checks mechanical facts it can establish
+directly: requested files changed, the reported tests ran, exit status is
+successful, and the returned result covers the user's request. When a
+technical judgment remains uncertain, send it back to Pro instead of
+overriding Pro with a less capable independent analysis. Flash may translate
+and summarize the result, but it must not claim stronger technical
+certification than the available evidence supports.
+
 ## User-facing language
 
 Write all parent commentary and final responses in the same language as the user's latest request,
@@ -329,6 +376,12 @@ merely accepting the child's completion summary:
 5. Finish with PASS when all material criteria are satisfied or report an honest
    blocked/unverifiable limitation. If an objective material engineering gap
    remains, issue one additional bounded `deepseek_pro + REACT` assignment.
+
+When the completed child is Pro and the parent is Flash, treat Pro as the
+technical owner for the escalated scope. The parent performs direct mechanical
+checks and reports any evidence it can independently observe. It does not
+substitute its own complex reasoning for Pro's verified technical result; an
+unresolved technical uncertainty is returned to Pro rather than guessed.
 
 The automatic follow-up maximum = 1 (at most one follow-up). After the second parent review, stop and
 report any remaining limitation; no runtime retry counter or follow-up state

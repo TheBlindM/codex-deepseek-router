@@ -126,6 +126,12 @@ provider / 模型 / 线程 / marker 验证 → Codex 整合
 | `deepseek_pro` | 根因、架构、并发、安全、复杂评审和跨模块实现 | 可写工作区；负责需要深度推理的落地 |
 | Codex 父 Agent | 琐碎任务、敏感内容、关键视觉判断、最终验证与整合 | 始终保留主控权 |
 
+Router 默认采用 Flash-first 策略。大上下文、多文件搜索、长日志、初步根因分析
+和修改前调研不应仅因规模较大而直接交给 Pro；Flash 能完成且有证据时就先使用
+Flash。Pro 用于需要写工作区的任务、Flash 明确升级或失败、高风险分析，以及无法
+用 Flash 证据收敛的系统级决策。父 Agent 可以直接落地 Flash 的只读修改提案，
+无需再经过一次 Pro。
+
 Flash 可以返回带 Evidence Packet 的 `ESCALATE_TO_PRO`；Pro 从已有证据继续，
 不重新扫描整个仓库。FAST / REACT / SPEC / DEEP 为有边界的决策合同，不是
 额外的模型或运行时。
@@ -148,6 +154,11 @@ assignment 默认 900 秒；`deepseek_pro + REACT` 且包含独立 `QUALITY CLOS
 section 的 Complex Pro assignment 自动使用 1800 秒。`delegate --delegate-timeout
 <seconds>` 可以用正整数显式覆盖，返回结果中的 `timeout_seconds` 记录实际采用的
 上限。这是 Router 的安全边界，不是 Codex 自身的 15 分钟限制。
+
+每次 `direct_codex` 委派使用一次性的临时 `CODEX_HOME`。这样即使 Codex 的
+shell 沙箱只能读取主 `.codex`、不能写入其状态数据库，DeepSeek 子执行仍能
+正常初始化；任务结束后临时状态会删除，不会替换父模型、供应商、登录信息或
+主会话记录。
 
 这套“信息驱动收敛 + Acceptance Criteria 驱动完成”不新增第五个 Policy、
 Acceptance Profile schema 字段或 transport 状态机；普通功能任务仍保持快速收敛。

@@ -39,6 +39,15 @@ machine-readable inputs to translate, not as a reason to switch languages.
 - Never silently substitute another model or role. A transport change may
   preserve the requested DeepSeek role, but its result must identify the
   actual transport explicitly.
+- Route with a Flash-first bias. Use `deepseek_flash` as the default delegated
+  role for bounded read-only investigation, including large multi-file
+  investigations. Reserve `deepseek_pro` for workspace edits, explicit Flash
+  escalation or failure, high-risk reasoning, and decisions that cannot be
+  bounded with Flash evidence.
+- When an escalated task requires Pro, Pro owns implementation, tests and
+  technical acceptance for that scope. A Flash parent performs mechanical
+  evidence checks and must not replace Pro's technical judgment with a weaker
+  independent analysis.
 
 ## After triggering
 
