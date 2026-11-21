@@ -49,6 +49,13 @@ the same Desktop-bundled Codex binary. The assignment is sent through stdin;
 the API key is resolved by command auth and never enters argv. Older compatible
 versions retain native `spawn_agent` plus plaintext Hook delivery.
 
+Each `direct_codex` delegation uses a temporary isolated `CODEX_HOME`. This
+keeps the child execution usable when Codex Desktop runs shell tools under a
+sandbox identity that can read but not write the primary `$CODEX_HOME`. The
+temporary home carries only that bounded execution's state and is removed
+afterward; it does not replace the user's parent model, provider, login,
+configuration, or persistent session database.
+
 Compatibility is proven by the live `test` command. Both paths require the
 correct provider, model, role and a random challenge marker; the Native path
 also validates callback/thread metadata. Flash passing never implies Pro

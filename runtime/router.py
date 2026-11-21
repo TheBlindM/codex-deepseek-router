@@ -29,6 +29,11 @@ DEFAULT_POLICIES = {
     RouteMode.PRO: "REACT",
 }
 
+# Flash-first bias for the text-only fallback router. Previously Pro was
+# selected at 0.55 demand; requiring 0.80 keeps moderately large read-only
+# investigations on Flash while still escalating genuinely saturated tasks.
+FLASH_FIRST_PRO_DEMAND_THRESHOLD = 0.80
+
 
 def resolve_policy(mode: RouteMode, policy: Optional[str]) -> Optional[str]:
     if mode is RouteMode.CODEX:
@@ -68,7 +73,7 @@ def choose(mode: str, task: str, context: Optional[Mapping[str, Any]] = None) ->
     score = min(1.0, (files / 12.0) * 0.25 + (chars / 240_000.0) * 0.35 + (depth / 10.0) * 0.40)
     if not task.strip():
         return Decision(RouteMode.CODEX, "empty task stays with parent", 0.0)
-    if score >= 0.55:
+    if score >= FLASH_FIRST_PRO_DEMAND_THRESHOLD:
         return Decision(RouteMode.PRO, "context and reasoning demand exceed Flash budget", score)
     return Decision(RouteMode.FLASH, "bounded text task fits the Flash budget", score)
 

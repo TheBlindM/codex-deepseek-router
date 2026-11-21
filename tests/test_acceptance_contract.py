@@ -113,3 +113,16 @@ def test_quality_regression_cases_keep_parent_visual_ownership():
     criteria = " ".join(black_hole["acceptance_criteria"])
     for marker in ("shadow", "lensing", "Doppler", "disk"):
         assert marker.lower() in criteria.lower()
+
+
+def test_escalated_pro_owns_technical_delivery_and_acceptance():
+    for marker in (
+        "Escalated Pro ownership",
+        "make Pro the technical owner of the",
+        "Do not ask Pro merely to suggest changes",
+        "mechanical facts it can establish",
+        "send it back to Pro",
+        "rather than guessed",
+        "does not\nsubstitute its own complex reasoning",
+    ):
+        assert marker in SKILL

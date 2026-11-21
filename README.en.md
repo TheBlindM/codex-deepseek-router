@@ -136,6 +136,13 @@ provider + model + thread + marker verification → Codex integration
 | `deepseek_pro` | Root cause, architecture, concurrency, security, complex review, cross-module implementation | Workspace-write; lands work that needs deep reasoning |
 | Codex parent | Trivial work, sensitive context, critical visual judgment, final verification and integration | Always keeps control |
 
+Routing is Flash-first. Large context, multi-file search, long logs, initial
+root-cause analysis, and pre-implementation research do not become Pro work
+merely because they are large. Pro is used for workspace edits, explicit
+Flash escalation or demonstrated failure, high-risk reasoning, and
+system-wide decisions that cannot be bounded with Flash evidence. The parent
+may land a Flash read-only proposal directly without a redundant Pro pass.
+
 Flash can return `ESCALATE_TO_PRO` with an Evidence Packet so Pro continues
 from collected evidence instead of scanning the repository again. FAST / REACT
 / SPEC / DEEP are bounded decision contracts, not extra models or runtimes.
@@ -165,6 +172,12 @@ section automatically receives 1800 seconds. A positive
 `delegate --delegate-timeout <seconds>` value explicitly overrides that choice,
 and the returned `timeout_seconds` records the effective limit. This is a Router
 safety bound, not an inherent 15-minute Codex limit.
+
+Each `direct_codex` delegation uses a temporary isolated `CODEX_HOME`. This
+keeps the child execution usable when Codex Desktop runs shell tools under a
+sandbox identity that can read but not write the primary `.codex` state
+database. The temporary home is removed afterward and does not replace the
+parent model, provider, login, configuration, or persistent session state.
 
 This information-driven, acceptance-criteria-driven completion adds no fifth
 policy, acceptance-profile schema field, or transport state machine; ordinary

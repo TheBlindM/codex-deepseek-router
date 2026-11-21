@@ -14,6 +14,26 @@ FAST/REACT/SPEC/DEEP. The Reasoning Adapter enforces an already selected pair;
 it does not classify natural language, add weak/mixed modes, expose a
 continuous reasoning level, or let a child reroute itself.
 
+The semantic policy is Flash-first. Flash remains the default for bounded
+read-only investigation even when the investigation is large or spans several
+files. Pro requires a concrete hard trigger: workspace edits, Flash escalation
+or demonstrated failure, high-risk reasoning, or a system-wide decision that
+cannot be bounded with available evidence. Long context or speculative future
+edits are not sufficient reasons to skip Flash.
+
+The text-only fallback applies the same direction numerically: Pro requires a
+normalized demand score of at least `0.80`, raised from the previous `0.55`.
+This makes the fallback materially Flash-biased while preserving an escalation
+boundary for genuinely saturated tasks. Explicit `flash` and `pro` modes remain
+honored unchanged.
+
+Flash-first does not make the Flash parent the technical authority for an
+escalated Pro task. Once Pro owns workspace edits or high-risk reasoning, its
+assignment includes the verification target and child/shared acceptance
+ownership. The Flash parent performs mechanical checks over observable
+artifacts and routes unresolved technical uncertainty back to Pro. This avoids
+having a lower-cost parent silently override the stronger worker it invoked.
+
 ## Use additive first-turn contracts, not a DSH surface imitation
 
 Pinned DSH Standard replaces system sections, clears contexts, limits the

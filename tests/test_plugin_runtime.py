@@ -12,7 +12,13 @@ sys.path.insert(1, str(ROOT))
 from runtime.client import DeepSeekClient, _structured, build_fallback_prompt
 from runtime.context import TaskContext, sanitize_context
 from runtime.protocol import ErrorCode, RouterError
-from runtime.router import RouteMode, Router, choose, resolve_policy
+from runtime.router import (
+    FLASH_FIRST_PRO_DEMAND_THRESHOLD,
+    RouteMode,
+    Router,
+    choose,
+    resolve_policy,
+)
 import codex_deepseek_router as manager
 
 
@@ -63,6 +69,29 @@ def test_router_uses_explicit_mode_and_complexity_metadata():
     assert choose("flash", "review", {}).mode.value == "flash"
     assert choose("pro", "review", {}).mode.value == "pro"
     assert choose("auto", "architecture", {"file_count": 20, "context_size": 500000, "reasoning_depth": 9}).mode.value == "pro"
+
+
+def test_auto_router_is_flash_first_for_moderate_read_only_work():
+    context = {
+        "file_count": 10,
+        "context_size": 180000,
+        "reasoning_depth": 6,
+    }
+    decision = choose("auto", "trace a moderately complex behavior", context)
+    assert FLASH_FIRST_PRO_DEMAND_THRESHOLD == 0.80
+    assert decision.score < FLASH_FIRST_PRO_DEMAND_THRESHOLD
+    assert decision.mode is RouteMode.FLASH
+
+
+def test_auto_router_keeps_pro_for_saturated_demand():
+    context = {
+        "file_count": 20,
+        "context_size": 500000,
+        "reasoning_depth": 9,
+    }
+    decision = choose("auto", "system-wide architecture decision", context)
+    assert decision.score >= FLASH_FIRST_PRO_DEMAND_THRESHOLD
+    assert decision.mode is RouteMode.PRO
 
 
 def test_fallback_policy_defaults_are_deterministic():
@@ -171,8 +200,9 @@ class FakeResponse:
         }).encode()
 
 
-def test_client_returns_structured_result(monkeypatch):
+def test_client_returns_structured_result(monkeypatch, tmp_path):
     monkeypatch.setenv("DEEPSEEK_API_KEY", "sk-test")
+    monkeypatch.setenv("CODEX_HOME", str(tmp_path))
     client = DeepSeekClient("flash", opener=lambda request, timeout: FakeResponse())
     result = client.complete("inspect", context={"file_count": 1})
     assert result["status"] == "completed"

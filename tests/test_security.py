@@ -74,6 +74,14 @@ def test_smoke_failure_payloads_never_contain_key(paths, monkeypatch):
     assert secret not in json.dumps({"code": getattr(exc.value, "code", None), "details": details})
 
 
+def test_smoke_env_can_use_isolated_direct_codex_home(paths, tmp_path, monkeypatch):
+    monkeypatch.setattr(manager, "read_credential_key", lambda: "sk-test")
+    direct_home = tmp_path / "direct-home"
+    env = manager._smoke_env(paths, direct_home)
+    assert env["CODEX_HOME"] == str(direct_home)
+    assert env["CODEX_HOME"] != str(paths.codex_home)
+
+
 def test_macos_smoke_env_does_not_redundantly_decrypt_key(paths, monkeypatch):
     monkeypatch.delenv(manager.API_KEY_ENV, raising=False)
     monkeypatch.setattr(manager, "platform_name", lambda: "macos")

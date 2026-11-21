@@ -5,13 +5,30 @@ the decision contract. There is no keyword-scoring router.
 
 ## Model routing
 
+Routing is Flash-first. The parent starts with `deepseek_flash` for bounded
+text-only investigation whenever a read-only result can satisfy the task.
+Large context, many files, long logs, initial root-cause work, and
+pre-implementation proposals are not Pro triggers by themselves. Pro is the
+default destination only for workspace edits, explicit Flash escalation or
+failure, high-risk reasoning, and system-wide decisions that cannot be bounded
+with Flash evidence. Flash proposals can be landed by the parent directly;
+they do not require a redundant Pro pass.
+
+Once a task is escalated for implementation or high-risk work, Pro is the
+technical owner for that scope. The Pro assignment carries acceptance criteria,
+a concrete verification target, and child or shared verification ownership.
+The Flash parent checks directly observable facts such as changed files, test
+exit status, and requested coverage. It sends unresolved technical uncertainty
+back to Pro instead of overriding Pro with a weaker independent analysis.
+
 ### deepseek_flash (deepseek-v4-flash)
 
 Fast bounded read-only worker: repository search, enumeration, logs,
 test-output analysis, extraction, code mapping, high-volume reading, and
-pre-implementation analysis. Flash never edits files — it returns findings,
-analysis or a proposed change as text, and the parent (or Pro) lands the
-edit.
+multi-file investigation. Flash also handles bounded SPEC-Lite root-cause
+work. Flash never edits files — it returns findings, analysis or a proposed
+change as text, and the parent (or Pro when escalation is genuinely needed)
+lands the edit.
 
 Examples: "Find all callers of create_job", "Find the earliest anomaly in
 this 5000-line test log", "Propose the exact diff for renaming tmp to

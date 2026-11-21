@@ -12,7 +12,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # ubuntu-latest now resolves to Ubuntu 26.04, which no longer provides
+        # the Python 3.9 runtime required by the project's compatibility matrix.
+        os: [ubuntu-24.04, macos-latest, windows-latest]
         python: ["3.9", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
