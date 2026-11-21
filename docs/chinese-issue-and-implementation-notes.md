@@ -343,4 +343,4 @@ deepseek-v4-pro   completed
 
 ## 九、当前状态
 
-本文档仅为本地中文说明和 Issue 草稿，尚未提交到 GitHub。
+本文档随本次 PR 分支提交到 GitHub，供上游维护者审核；不代表这些修改已被上游合并。
